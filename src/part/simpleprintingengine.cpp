@@ -28,12 +28,11 @@
 #include "simpleprintingengine.h"
 #include "simpleprintingsettings.h"
 
-#include <kapplication.h>
-#include <kiconloader.h>
-#include <klocale.h>
-#include <kfontdialog.h>
+#include <QApplication>
+#include <QIcon>
+#include <QFontDialog>
 #include <kurllabel.h>
-#include <kdebug.h>
+#include <QDebug>
 #include <kconfig.h>
 
 #include <qimage.h>
@@ -46,7 +45,7 @@
 #include <QDateTime>
 #include <QGraphicsScene>
 #include <QPaintDevice>
-
+#include <klocalizedstring.h>
 #include <math.h>
 
 namespace KGraphViewer
@@ -100,7 +99,7 @@ void KGVSimplePrintingEngine::clear()
 
 void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool paint)
 {
-	kDebug() << pageNumber << "/" << m_pagesCount << paint;
+	qDebug() << pageNumber << "/" << m_pagesCount << paint;
 
 	uint y = 0;
 
@@ -111,7 +110,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
 	int w = 0, h = 0;
 	QPaintDevice *pdm = painter.device();
 	const bool printer = pdm->devType() == QInternal::Printer;
-  kDebug() << "printer:"<< printer;
+  qDebug() << "printer:"<< printer;
 	
 	if (!printer) {
 		w = pdm->width();
@@ -124,7 +123,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
 
 	if (!m_paintInitialized) 
   {
-    kDebug() << "initializing";
+    qDebug() << "initializing";
     // HACK: some functions here do not work properly if were
     // are not in a paint event, so repeat this until we actually paint.
     m_paintInitialized = paint;
@@ -176,7 +175,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
 		}
 		painter.setFont(m_mainFont);
 
-		m_dateTimeText = KGlobal::locale()->formatDateTime(QDateTime::currentDateTime());
+		m_dateTimeText = QLocale::system().toString(QDateTime::currentDateTime());
 		m_dateTimeWidth = 0;
 		if (m_settings->addDateAndTime)
 		{
@@ -191,7 +190,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
 		m_headerTextRect.setWidth(
 			qMin(int(m_pageWidth - m_dateTimeWidth), m_headerTextRect.width()));
   }
-  kDebug() << "after initialization";
+  qDebug() << "after initialization";
   
   //screen only
   if(!printer) 
@@ -245,25 +244,25 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
     h -= (m_mainLineSpacing*3/2 + 1);
   }
 
-  kDebug() << "(w, h) = (" << w << ", " << h <<")";
+  qDebug() << "(w, h) = (" << w << ", " << h <<")";
   if ( ( (m_settings->fitToOnePage) || 
     (m_painting.width()<=w && m_painting.height()<=h) )
        && !m_eof)
   {
-    kDebug() << "single-page printing";
+    qDebug() << "single-page printing";
     if (paint)
     {
       QPixmap pix = m_painting.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      kDebug() << "drawPixmap";
+      qDebug() << "drawPixmap";
       painter.drawPixmap((int)leftMargin, y, pix);
     }
     m_eof = true;
   }
   else if (m_settings->horizFitting != 0 || m_settings->vertFitting != 0)
   {
-    kDebug() << "fitted multi-pages printing page " << pageNumber;
+    qDebug() << "fitted multi-pages printing page " << pageNumber;
     int nbTilesByRow = (int)(ceil((double)m_painting.width())/w) + 1;
-    kDebug() << "  nb tiles by row = " << nbTilesByRow;
+    qDebug() << "  nb tiles by row = " << nbTilesByRow;
 
     int tileWidth = w;
     int tileHeight = h;
@@ -277,7 +276,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
     {
       tileHeight = int(ceil(((double)m_painting.height())/m_settings->vertFitting));
     }
-    kDebug() << "  tile size = "<<tileWidth<<"/"<<tileHeight;
+    qDebug() << "  tile size = "<<tileWidth<<"/"<<tileHeight;
     int rowNum = pageNumber / nbTilesByRow;
     int columnNum = pageNumber % nbTilesByRow;
     int x1, y1, x2, y2;
@@ -285,8 +284,8 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
     x2 = int(tileWidth * (columnNum+1));
     y1 = int(tileHeight * rowNum);
     y2 = int(tileHeight * (rowNum+1));
-    kDebug() << "(x1, y1, x2, 2) = ("<<x1<<","<<y1<<","<<x2<<","<<y2<<")";
-    kDebug() << "painting size = ("<<m_painting.width()<<"/"<<m_painting.height()<<")";
+    qDebug() << "(x1, y1, x2, 2) = ("<<x1<<","<<y1<<","<<x2<<","<<y2<<")";
+    qDebug() << "painting size = ("<<m_painting.width()<<"/"<<m_painting.height()<<")";
     if (paint)
     {
       Qt::AspectRatioMode scaleMode = Qt::IgnoreAspectRatio;
@@ -316,7 +315,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
   }
   else
   {
-    kDebug() << "multi-pages printing page " << pageNumber;
+    qDebug() << "multi-pages printing page " << pageNumber;
     int nbTilesByRow = (int)(((double)m_painting.width())/w) + 1;
     int rowNum = pageNumber / nbTilesByRow;
     int columnNum = pageNumber % nbTilesByRow;
@@ -325,7 +324,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
     x2 = int(w * (columnNum+1));
     y1 = int(h * rowNum);
     y2 = int(h * (rowNum+1));
-    kDebug() << "(x1, y1, x2, 2) = ("<<x1<<","<<y1<<","<<x2<<","<<y2<<")";
+    qDebug() << "(x1, y1, x2, 2) = ("<<x1<<","<<y1<<","<<x2<<","<<y2<<")";
     if (paint)
     {
       painter.drawPixmap((int)leftMargin, y, m_painting.copy(x1, y1, x2-x1+1, y2-y1+1));
@@ -338,7 +337,7 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
 
   if (m_settings->addTableBorders) 
   {
-    kDebug() << "Adding table borders";
+    qDebug() << "Adding table borders";
     int y1 = (int)topMargin ;
     y1 += (m_headerTextRect.height());
     int y2 = (int)topMargin + m_pageHeight;
@@ -354,12 +353,11 @@ void KGVSimplePrintingEngine::paintPage(int pageNumber, QPainter& painter, bool 
       painter.drawLine((int)leftMargin, y2, (int)leftMargin, y1);
     }
   }
-  kDebug() << "paintPage done";
+  qDebug() << "paintPage done";
 }
 
 void KGVSimplePrintingEngine::calculatePagesCount(QPainter& painter)
 {
-  kDebug();
 	if (m_eof || !m_data) {
 		m_pagesCount = 0;
 		return;
@@ -391,7 +389,7 @@ uint KGVSimplePrintingEngine::maxHorizFit() const
   {
     w -= 2; 
   }
-//   kDebug() << "maxHorizFit: " << m_painting.width() << " / " << w
+//   () << "maxHorizFit: " << m_painting.width() << " / " << w
 //     << " = " << m_painting.width()/w;
   return (uint)ceil(((double)m_painting.width())/w) + 1;
 }

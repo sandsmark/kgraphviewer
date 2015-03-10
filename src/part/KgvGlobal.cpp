@@ -26,20 +26,17 @@
  */
 
 #include <KgvGlobal.h>
-#include <kdebug.h>
+#include <QDebug>
 #include <QDesktopWidget>
 #include <qfont.h>
 #include <qfontinfo.h>
 #include <QPaintDevice>
-#include <kapplication.h>
-#include <kglobalsettings.h>
-#include <kglobal.h>
-#include <klocale.h>
-#include <ksimpleconfig.h>
-#include <kstandarddirs.h>
+#include <QApplication>
+#include <KSharedConfig>
+#include <QStandardPaths>
 // #include <k3staticdeleter.h>
-#include <kimageio.h>
-#include <kiconloader.h>
+#include <QImage>
+#include <QIcon>
 
 
 KgvGlobal* KgvGlobal::s_global = 0L;
@@ -65,8 +62,8 @@ KgvGlobal::KgvGlobal()
     // Another way to get the DPI of the display would be QPaintDeviceMetrics,
     // but we have no widget here (and moving this to KgvView wouldn't allow
     // using this from the document easily).
-    m_dpiX = KApplication::desktop()->physicalDpiX();
-    m_dpiY = KApplication::desktop()->physicalDpiY();
+    m_dpiX = QApplication::desktop()->physicalDpiX();
+    m_dpiY = QApplication::desktop()->physicalDpiY();
 }
 
 KgvGlobal::~KgvGlobal()
@@ -76,7 +73,7 @@ KgvGlobal::~KgvGlobal()
 
 QFont KgvGlobal::_defaultFont()
 {
-    QFont font = KGlobalSettings::generalFont();
+    QFont font = qApp->font();
     // we have to use QFontInfo, in case the font was specified with a pixel size
     if ( font.pointSize() == -1 )
     {

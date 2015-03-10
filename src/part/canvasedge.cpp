@@ -33,7 +33,7 @@
 #include "dotgraphview.h"
 #include "FontsCache.h"
 
-#include <KAction>
+#include <QAction>
 
 #include <QPainter>
 #include <QGraphicsSceneMouseEvent>
@@ -59,7 +59,7 @@ CanvasEdge::CanvasEdge(DotGraphView* view, GraphEdge* e,
     m_gh(/*gh*/0), m_wdhcf(wdhcf), m_hdvcf(hdvcf), m_edge(e),
     m_font(0), m_view(view), m_popup(new QMenu())
 {
-  kDebug() << "edge "  << edge()->fromNode()->id() << "->"  << edge()->toNode()->id() << m_gh;
+  qDebug() << "edge "  << edge()->fromNode()->id() << "->"  << edge()->toNode()->id() << m_gh;
   setBoundingRegionGranularity(0.9);
   m_font = FontsCache::changeable().fromName(e->fontName());
 
@@ -71,7 +71,7 @@ CanvasEdge::CanvasEdge(DotGraphView* view, GraphEdge* e,
   setToolTip(tipStr);
 
   // the message should be given (or possible to be given) by the part user
-  KAction* removeEdgeAction = new KAction(i18n("Remove selected edge(s)"), this);
+  QAction* removeEdgeAction = new QAction(i18n("Remove selected edge(s)"), this);
   m_popup->addAction(removeEdgeAction);
   connect(removeEdgeAction,SIGNAL(triggered(bool)),this,SLOT(slotRemoveEdge()));
   
@@ -83,7 +83,7 @@ CanvasEdge::CanvasEdge(DotGraphView* view, GraphEdge* e,
 
   setAcceptHoverEvents ( true );
 
-  kDebug() << "connect slotElementHoverEnter";
+  qDebug() << "connect slotElementHoverEnter";
   connect(this, SIGNAL(hoverEnter(CanvasEdge*)), view, SLOT(slotElementHoverEnter(CanvasEdge*)));
   connect(this, SIGNAL(hoverLeave(CanvasEdge*)), view, SLOT(slotElementHoverLeave(CanvasEdge*)));
   
@@ -374,7 +374,7 @@ Q_UNUSED(widget)
       }
       if (edge()->attributes().contains("color"))
       {
-        kDebug() << "set edge color to " << QColor(edge()->attributes()["color"]).name();
+        qDebug() << "set edge color to " << QColor(edge()->attributes()["color"]).name();
         lineColor = QColor(edge()->attributes()["color"]);
       }
       for (int splineNum = 0; splineNum < edge()->colors().count() || (splineNum==0 && edge()->colors().count()==0); splineNum++)
@@ -485,12 +485,12 @@ void CanvasEdge::computeBoundingRect()
 
     m_boundingRect = a.boundingRect();
   }
-  kDebug() << edge()->fromNode()->id() << "->" << edge()->toNode()->id() << "New bounding rect is:" << m_boundingRect;
+  qDebug() << edge()->fromNode()->id() << "->" << edge()->toNode()->id() << "New bounding rect is:" << m_boundingRect;
 }
 
 void CanvasEdge::mousePressEvent(QGraphicsSceneMouseEvent * event)
 {
-  kDebug() << event;
+  qDebug() << event;
   if (m_view->isReadOnly())
   {
     return;
@@ -512,7 +512,7 @@ void CanvasEdge::mousePressEvent(QGraphicsSceneMouseEvent * event)
       emit(selected(this,event->modifiers()));
       update();
     }
-    kDebug() << "emiting edgeContextMenuEvent("<<m_edge->id()<<","<<event->screenPos()<<")";
+    qDebug() << "emiting edgeContextMenuEvent("<<m_edge->id()<<","<<event->screenPos()<<")";
     emit(edgeContextMenuEvent(m_edge->id(), event->screenPos() ));
 // opens the selected edge contextual menu and if necessary select the edge
 /*    kDebug() << "opens the contextual menu";
@@ -527,21 +527,20 @@ qreal CanvasEdge::distance(const QPointF& point1, const QPointF& point2)
 
 void CanvasEdge::slotRemoveEdge()
 {
-  kDebug();
   m_view->removeSelectedElements();
 }
 
 void CanvasEdge::hoverEnterEvent( QGraphicsSceneHoverEvent * event )
 {
   Q_UNUSED(event)
-  kDebug() << edge()->id();
+  qDebug() << edge()->id();
   emit hoverEnter(this);
 }
 
 void CanvasEdge::hoverLeaveEvent( QGraphicsSceneHoverEvent * event )
 {
   Q_UNUSED(event)
-  kDebug() << edge()->id();
+  qDebug() << edge()->id();
   emit hoverLeave(this);
 }
 

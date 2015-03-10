@@ -20,11 +20,11 @@
 #ifndef _KGRAPHEDITOR_H_
 #define _KGRAPHEDITOR_H_
 
-#include <kapplication.h>
-#include <kxmlguiwindow.h>
-#include <ktabwidget.h>
-#include <kaction.h>
-#include <krecentfilesaction.h>
+#include <QApplication>
+#include <KXmlGuiWindow>
+#include <QTabWidget>
+#include <QAction>
+#include <KRecentFilesAction>
 
 #include <graphviz/gvc.h>
 
@@ -65,7 +65,7 @@ public:
   /**
     * Use this method to load whatever file/URL you have
     */
-  void openUrl(const KUrl& url);
+  void openUrl(const QUrl& url);
  
   void reloadPreviousFiles();
 
@@ -93,7 +93,7 @@ public Q_SLOTS:
   /**
     * Use this method to load whatever file/URL you have
     */
-  void openUrl(const QString& url) {openUrl(KUrl(url));}
+  void openUrl(const QString& url) {openUrl(QUrl(url));}
 
   void slotSetActiveGraph(KParts::ReadOnlyPart* part);
 
@@ -124,7 +124,7 @@ private Q_SLOTS:
   void fileSaveAs();
   void close(QWidget* tab);
   void close();
-  void slotURLSelected(const KUrl&);
+  void slotURLSelected(const QUrl&);
   void optionsShowToolbar();
   void optionsShowStatusbar();
   void optionsConfigureKeys();
@@ -153,7 +153,7 @@ private:
 private:
   KGraphEditorNodesTreeWidget* m_treeWidget;
   KGraphEditorElementTreeWidget* m_newElementAttributesWidget;
-  KTabWidget* m_widget;
+  QTabWidget* m_widget;
   KRecentFilesAction* m_rfa;
   
   KToggleAction *m_toolbarAction;

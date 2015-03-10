@@ -28,11 +28,11 @@
 #include "simpleprintpreviewwindow_p.h"
 #include "simpleprintingengine.h"
 #include "simpleprintingsettings.h"
-#include <kdebug.h>
+#include <QDebug>
 #include <QPixmap>
 #include <QResizeEvent>
 #include <QPaintEvent>
-
+#include <QApplication>
 namespace KGraphViewer
 {
 
@@ -41,15 +41,15 @@ KGVSimplePrintPreviewView::KGVSimplePrintPreviewView(
  : QWidget(),
   m_window(window)
 {
-  kDebug() << "KGVSimplePrintPreviewView";
+  qDebug() << "KGVSimplePrintPreviewView";
 /*  resize(300,400);
   resizeContents(200, 400);*/
-setAttribute(Qt::WA_PaintOutsidePaintEvent,true);
+//setAttribute(Qt::WA_PaintOutsidePaintEvent,true);
 }
 
 void KGVSimplePrintPreviewView::paintEvent( QPaintEvent *pe )
 {
-  kDebug() << pe;
+  qDebug() << pe;
   Q_UNUSED(pe);
 
   QPainter p(this);
@@ -57,18 +57,18 @@ void KGVSimplePrintPreviewView::paintEvent( QPaintEvent *pe )
   //   p.begin(&pm);
 //   p.initFrom(this);
 //! @todo only for screen!
-  kDebug() << "filling rect";
+  qDebug() << "filling rect";
   p.fillRect(QRect(QPoint(0,0),m_window->size()), QBrush(Qt::white));//pe->rect(), QBrush(white));
   if (m_window->currentPage()>=0)
   {
-    kDebug() << "painting page";
+    qDebug() << "painting page";
     m_window->m_engine.paintPage(m_window->currentPage(), p);
   }
 //    emit m_window->paintingPageRequested(m_window->currentPage(), p);
   p.end();
 }
 
-#define KGVSimplePrintPreviewScrollView_MARGIN KDialog::marginHint()
+//#define KGVSimplePrintPreviewScrollView_MARGIN qApp->style()-> QDialog::marginHint()
 
 KGVSimplePrintPreviewScrollView::KGVSimplePrintPreviewScrollView(
   KGVSimplePrintPreviewWindow *window) : QScrollArea(window), m_window(window)
@@ -88,7 +88,7 @@ KGVSimplePrintPreviewScrollView::KGVSimplePrintPreviewScrollView(
 
 void KGVSimplePrintPreviewScrollView::paintEvent( QPaintEvent *pe )
 {
-  kDebug() << widget();
+  qDebug() << widget();
   QScrollArea::paintEvent(pe);
   ((KGVSimplePrintPreviewView*)widget())->paintEvent(pe);
 }
@@ -116,15 +116,16 @@ void KGVSimplePrintPreviewScrollView::paintEvent( QPaintEvent *pe )
 
 void KGVSimplePrintPreviewScrollView::setFullWidth()
 {
-  kDebug() ;
   viewport()->setUpdatesEnabled(false);
   double widthMM = KgvPageFormat::width( 
     m_window->settings()->pageLayout.format, 
     m_window->settings()->pageLayout.orientation);
   double heightMM = KgvPageFormat::height( 
     m_window->settings()->pageLayout.format, m_window->settings()->pageLayout.orientation);
+#warning fix width
 //  int constantWidth = m_window->width()- KGVSimplePrintPreviewScrollView_MARGIN*6;
-  double constantWidth = width()- KGVSimplePrintPreviewScrollView_MARGIN*6;
+  //double constantWidth = width()- KGVSimplePrintPreviewScrollView_MARGIN*6;
+  double constantWidth = 60;
   double heightForWidth = constantWidth * heightMM / widthMM;
 //  heightForWidth = qMin(kapp->desktop()->height()*4/5, heightForWidth);
   constantWidth = heightForWidth * widthMM / heightMM;

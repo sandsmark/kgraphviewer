@@ -25,7 +25,7 @@
 #include "canvassubgraph.h"
 #include "dotdefaults.h"
 
-#include <kdebug.h>
+#include <QDebug>
 
 namespace KGraphViewer
 {
@@ -47,7 +47,7 @@ GraphSubgraph::GraphSubgraph(graph_t* sg) :
 
 void GraphSubgraph::updateWithSubgraph(const GraphSubgraph& subgraph)
 {
-  kDebug() << id() << subgraph.id();
+  qDebug() << id() << subgraph.id();
   GraphElement::updateWithElement(subgraph);
 
   bool found = false;
@@ -69,7 +69,7 @@ void GraphSubgraph::updateWithSubgraph(const GraphSubgraph& subgraph)
         }
         else
         {
-          kError() << "Updated element is neither a node nor a subgraph";
+          qWarning() << "Updated element is neither a node nor a subgraph";
         }
         break;
       }
@@ -102,7 +102,7 @@ void GraphSubgraph::updateWithSubgraph(const GraphSubgraph& subgraph)
 
 void GraphSubgraph::updateWithSubgraph(graph_t* subgraph)
 {
-  kDebug() << agnameof(subgraph);
+  qDebug() << agnameof(subgraph);
   m_attributes["id"] = agnameof(subgraph);
   if (GD_label(subgraph))
     m_attributes["label"] = GD_label(subgraph)->text;
@@ -114,12 +114,12 @@ void GraphSubgraph::updateWithSubgraph(graph_t* subgraph)
   if (agget(subgraph, (char*)"_draw_") != NULL)
   {
     parse_renderop(agget(subgraph, (char*)"_draw_"), ops);
-    kDebug() << "_draw_: element renderOperations size is now " << ops.size();
+    qDebug() << "_draw_: element renderOperations size is now " << ops.size();
   }
   if (agget(subgraph, (char*)"_ldraw_") != NULL)
   {
     parse_renderop(agget(subgraph, (char*)"_ldraw_"), ops);
-    kDebug() << "_ldraw_: element renderOperations size is now " << ops.size();
+    qDebug() << "_ldraw_: element renderOperations size is now " << ops.size();
   }
 
   setRenderOperations(ops);
@@ -127,7 +127,7 @@ void GraphSubgraph::updateWithSubgraph(graph_t* subgraph)
   Agsym_t *attr = agnxtattr(subgraph, AGRAPH, NULL);
   while(attr)
   {
-    kDebug() << agnameof(subgraph) << ":" << attr->name << agxget(subgraph,attr);
+    qDebug() << agnameof(subgraph) << ":" << attr->name << agxget(subgraph,attr);
     m_attributes[attr->name] = agxget(subgraph,attr);
     attr = agnxtattr(subgraph, AGRAPH, attr);
   }
@@ -135,10 +135,10 @@ void GraphSubgraph::updateWithSubgraph(graph_t* subgraph)
 
   for (graph_t* sg = agfstsubg(subgraph); sg; sg = agnxtsubg(sg))
   {
-    kDebug() << "subsubgraph:" << agnameof(sg);
+    qDebug() << "subsubgraph:" << agnameof(sg);
     if ( subgraphs().contains(agnameof(sg)))
     {
-      kDebug() << "known subsubgraph";
+      qDebug() << "known subsubgraph";
       // ???
       //       nodes()[ngn->name]->setZ(ngn->z());
       subgraphs()[agnameof(sg)]->updateWithSubgraph(sg);
@@ -149,7 +149,7 @@ void GraphSubgraph::updateWithSubgraph(graph_t* subgraph)
     }
     else
     {
-      kDebug() << "new subsubgraph";
+      qDebug() << "new subsubgraph";
       GraphSubgraph* newsg = new GraphSubgraph(sg);
       //       kDebug() << "new created";
       subgraphs().insert(agnameof(sg), newsg);
@@ -216,7 +216,7 @@ bool GraphSubgraph::setElementSelected(
     bool unselectOthers)
 {
   if (element)
-    kDebug() << element->id() << selectValue << unselectOthers;
+    qDebug() << element->id() << selectValue << unselectOthers;
   bool res = false;
   if (element == this)
   {

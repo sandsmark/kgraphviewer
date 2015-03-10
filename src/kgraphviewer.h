@@ -22,11 +22,10 @@
 
 //#include <config-kgraphviewer.h>
 
-#include <kapplication.h>
-#include <kparts/mainwindow.h>
-#include <ktabwidget.h>
-#include <kaction.h>
-#include <krecentfilesaction.h>
+#include <KParts/MainWindow>
+#include <QTabWidget>
+#include <QAction>
+#include <KRecentFilesAction>
 
 #include <graphviz/gvc.h>
 
@@ -56,7 +55,7 @@ public:
   /**
     * Use this method to load whatever file/URL you have
     */
-  void openUrl(const KUrl& url);
+  void openUrl(const QUrl& url);
 
   void reloadPreviousFiles();
 
@@ -71,7 +70,7 @@ public slots:
   /**
     * Use this method to load whatever file/URL you have
     */
-  void openUrl(const QString& url) {openUrl(KUrl(url));}
+  void openUrl(const QString& url) {openUrl(QUrl::fromUserInput(url));}
   
   void close();
 
@@ -90,14 +89,14 @@ public slots:
 private slots:
   void fileNew();
   void fileOpen();
-  void close(QWidget* tab);
-  void slotURLSelected(const KUrl&);
+  void close(int index);
+  void slotURLSelected(const QUrl&);
   void optionsShowToolbar();
   void optionsShowStatusbar();
   void optionsConfigureKeys();
   void optionsConfigureToolbars();
   void optionsConfigure();
-  void newTabSelectedSlot(QWidget* tab);
+  void newTabSelectedSlot(int index);
 
   void applyNewToolbarConfig();
 
@@ -110,7 +109,7 @@ private:
   void setupActions();
     
 private:
-  KTabWidget* m_widget;
+  QTabWidget* m_widget;
   KRecentFilesAction* m_rfa;
   KParts::PartManager* m_manager;
   

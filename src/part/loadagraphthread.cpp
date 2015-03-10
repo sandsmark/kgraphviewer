@@ -19,34 +19,33 @@
 
 #include "loadagraphthread.h"
 
-#include <kdebug.h>
+#include <QDebug>
 
 void LoadAGraphThread::run()
 {
-  kDebug() << m_dotFileName;
+  qDebug() << m_dotFileName;
   FILE* fp = fopen(m_dotFileName.toUtf8().data(), "r");
   if (!fp)
   {
-      kError() << "Failed to open file " << m_dotFileName;
+      qWarning() << "Failed to open file " << m_dotFileName;
       return;
   }
   m_g = agread(fp, NULL);
   if (!m_g)
   {
-      kError() << "Failed to read file, retrying to work around graphviz bug(?)";
+      qWarning() << "Failed to read file, retrying to work around graphviz bug(?)";
       rewind(fp);
       m_g = agread(fp, NULL);
   }
   if (m_g==0)
   {
-      kError() << "Failed to read file " << m_dotFileName;
+      qWarning() << "Failed to read file " << m_dotFileName;
   }
   fclose(fp);
 }
 
 void LoadAGraphThread::loadFile(const QString& dotFileName)
 {
-  kDebug();
   sem.acquire();
   m_dotFileName = dotFileName;
   m_g = NULL;

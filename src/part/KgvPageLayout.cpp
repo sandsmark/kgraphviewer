@@ -27,11 +27,11 @@
 
 #include "KgvPageLayout.h"
 #include <KgvUnit.h>
-#include <klocale.h>
-#include <kdebug.h>
-#include <kglobal.h>
-#include <QtGui/QPrinter>
+#include <QDebug>
+#include <KSharedConfig>
+#include <QPrinter>
 #include <qdom.h>
+#include <klocalizedstring.h>
 
 // paper formats ( mm )
 #define PG_A3_WIDTH		297.0
@@ -62,7 +62,7 @@ KgvPageLayout KgvPageLayout::standardLayout()
     layout.ptBottom = MM_TO_POINT( 20.0 );
     layout.ptPageEdge = -1;
     layout.ptBindingSide = -1;
-    kDebug() << "Returning standardLayout";
+    qDebug() << "Returning standardLayout";
     return layout;
 }
 
@@ -119,12 +119,12 @@ int KgvPageFormat::printerPageSize( KgvFormat format )
 {
     if ( format == PG_SCREEN )
     {
-            kWarning() << "You use the page layout SCREEN. Printing in DIN A4 LANDSCAPE.";
+            qWarning() << "You use the page layout SCREEN. Printing in DIN A4 LANDSCAPE.";
             return QPrinter::A4;
     }
     else if ( format == PG_CUSTOM )
     {
-            kWarning() << "The used page layout (CUSTOM) is not supported by QPrinter. Printing in A4.";
+            qWarning() << "The used page layout (CUSTOM) is not supported by QPrinter. Printing in A4.";
             return QPrinter::A4;
     }
     else if ( format <= PG_LAST_FORMAT )
@@ -185,7 +185,7 @@ KgvFormat KgvPageFormat::formatFromString( const QString & string )
 
 KgvFormat KgvPageFormat::defaultFormat()
 {
-    int kprinter = KGlobal::locale()->pageSize();
+    int kprinter = QPrinter().paperSize();
     for ( int i = 0 ; i <= PG_LAST_FORMAT ; ++i )
     {
         if ( pageFormatInfo[ i ].kprinter == kprinter )

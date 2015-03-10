@@ -31,8 +31,8 @@
 #include <QFile>
 #include <QTextStream>
 
-#include <kdebug.h>
-#include <ktemporaryfile.h>
+#include <QDebug>
+#include <QTemporaryFile>
 
 namespace KGraphViewer
 {
@@ -47,27 +47,27 @@ GraphExporter::~GraphExporter()
 
 QString GraphExporter::writeDot(const DotGraph* graph, const QString& fileName)
 {
-  kDebug() << fileName;
+  qDebug() << fileName;
 
   QString actualFileName = fileName;
 
   if (fileName.isEmpty())
   {
-    KTemporaryFile tempFile;
-    tempFile.setSuffix(".dot");
+    QTemporaryFile tempFile;
+    tempFile.setFileTemplate("XXXXXX.dot");
     if (!tempFile.open()) 
     {
-      kError() << "Unable to open for temp file for writing " << tempFile.fileName() << endl;
+      qWarning() << "Unable to open for temp file for writing " << tempFile.fileName() << endl;
       exit(2);
     }
     actualFileName = tempFile.fileName();
-    kDebug() << "using " << actualFileName;
+    qDebug() << "using " << actualFileName;
   }
   
   QFile f(actualFileName);
   if (!f.open(QIODevice::WriteOnly | QIODevice::Text))
   {
-    kError() << "Unable to open file for writing " << fileName << endl;
+    qWarning() << "Unable to open file for writing " << fileName << endl;
     exit(2);
   }
   
@@ -101,12 +101,12 @@ QString GraphExporter::writeDot(const DotGraph* graph, const QString& fileName)
     (stream) << **nit;
   }
 
-  kDebug() << "writing edges";
+  qDebug() << "writing edges";
   GraphEdgeMap::const_iterator eit;
   for ( eit = graph->edges().begin();
         eit != graph->edges().end(); ++eit )
   {
-    kDebug() << "writing edge" << (*eit)->id();
+    qDebug() << "writing edge" << (*eit)->id();
     stream << **eit;
   }
 
@@ -146,11 +146,11 @@ graph_t* GraphExporter::exportToGraphviz(const DotGraph* graph)
     n->exportToGraphviz(node);
   }
   
-  kDebug() << "writing edges";
+  qDebug() << "writing edges";
   GraphEdgeMap::const_iterator eit;
   foreach (GraphEdge* e, graph->edges())
   {
-    kDebug() << "writing edge" << e->id();
+    qDebug() << "writing edge" << e->id();
     edge_t* edge = agedge(agraph, agnode(agraph, e->fromNode()->id().toUtf8().data(), 0),
                           agnode(agraph, e->toNode()->id().toUtf8().data(), 0), NULL, 1);
     e->exportToGraphviz(edge);

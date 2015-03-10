@@ -47,8 +47,7 @@
 #include <QPolygonF>
 #include <QPixmap>
 
-#include <kdebug.h>
-#include <klocale.h>
+#include <QDebug>
 
 namespace KGraphViewer
 {
@@ -60,7 +59,7 @@ CanvasNode::CanvasNode(DotGraphView* v,
 : CanvasElement(v,(GraphElement*)s, c, parent)
 
 {
-  kDebug() << s->id();
+  qDebug() << s->id();
   connect(s,SIGNAL(changed()),this,SLOT(modelChanged()));
 
   QString tipStr;

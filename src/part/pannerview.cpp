@@ -39,8 +39,8 @@
 #include <QPainter>
 #include <QMouseEvent>
 
-#include <kdebug.h>
-#include <klocale.h>
+#include <QDebug>
+#include <klocalizedstring.h>
 
 #include "dotgraphview.h"
 
@@ -109,7 +109,7 @@ void PannerView::moveZoomRectTo(const QPointF& newPos, bool notify)
   }
 
   if (m_zoomRect.center() == newPos) {
-    kDebug() << "same pos, don't do anything";
+    qDebug() << "same pos, don't do anything";
     return;
   }
 

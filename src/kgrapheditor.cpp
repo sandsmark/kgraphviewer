@@ -29,25 +29,25 @@
 #include "part/kgraphviewer_part.h"
 
 #include <kshortcutsdialog.h>
-#include <kfiledialog.h>
+#include <QFileDialog>
 #include <kconfig.h>
-#include <kurl.h>
-#include <ktabwidget.h>
+#include <QUrl>
+#include <QTabWidget>
 #include <kedittoolbar.h>
-#include <kdebug.h>
-#include <kstandarddirs.h>
+#include <QDebug>
+#include <QStandardPaths>
 #include <kstandardaction.h>
 #include <ktoggleaction.h>
-#include <klibloader.h>
-#include <kmessagebox.h>
-#include <kstatusbar.h>
-#include <klocale.h>
+#include <KPluginLoader>
+#include <KService>
+#include <QMessageBox>
+#include <QStatusBar>
 #include <kconfigdialog.h>
-#include <kiconloader.h>
+#include <QDebug>
 #include <krecentfilesaction.h>
 #include <ktoolbar.h>
 #include <KActionCollection>
-
+#include <klocalizedstring.h>
 #include <QtDBus/QtDBus>
 #include <QDockWidget>
 #include <QTreeWidget>
@@ -64,8 +64,8 @@ KGraphEditor::KGraphEditor() :
   // set the shell's ui resource file
   setXMLFile("kgrapheditorui.rc");
 
-  m_widget = new KTabWidget(this);
-  m_widget->setHoverCloseButton(true);
+  m_widget = new QTabWidget(this);
+  m_widget->setTabsClosable(true);
   connect(m_widget, SIGNAL(closeRequest(QWidget*)), this, SLOT(close(QWidget*)));
   connect(m_widget, SIGNAL(currentChanged(QWidget*)), this, SLOT(newTabSelectedSlot(QWidget*)));
   
@@ -104,13 +104,13 @@ KGraphEditor::KGraphEditor() :
 
   if (QDBusConnection::sessionBus().registerService( "org.kde.kgrapheditor" ))
   {
-    kDebug() << "Service Registered successfully";
+    qDebug() << "Service Registered successfully";
     QDBusConnection::sessionBus().registerObject("/", this, QDBusConnection::ExportAllSlots);
     
   }
   else
   {
-    kDebug() << "Failed to register service...";
+    qDebug() << "Failed to register service...";
   }
 
   // then, setup our actions
@@ -136,19 +136,15 @@ KGraphEditor::KGraphEditor() :
 
 KGraphEditor::~KGraphEditor()
 {
-  kDebug() ;
 }
 
 void KGraphEditor::reloadPreviousFiles()
 {
   QStringList previouslyOpenedFiles = KGraphEditorSettings::previouslyOpenedFiles();
   if ( (previouslyOpenedFiles.empty() == false) 
-       && (KMessageBox::questionYesNo(this, 
-              i18n("Do you want to reload files from previous session?"),
+       && (QMessageBox::question(this, 
               i18n("Session Restore"),
-              KStandardGuiItem::yes(),
-              KStandardGuiItem::no(),
-              "reopenPreviouslyOpenedFilesMode"   ) == KMessageBox::Yes) )
+              i18n("Do you want to reload files from previous session?")) == QMessageBox::Yes) )
   {
     QStringList::const_iterator it, it_end;
     it = previouslyOpenedFiles.constBegin(); it_end = previouslyOpenedFiles.constEnd();
@@ -162,14 +158,13 @@ void KGraphEditor::reloadPreviousFiles()
 
 KParts::ReadOnlyPart *KGraphEditor::slotNewGraph()
 {
-  kDebug();
   KPluginFactory *factory = KPluginLoader("kgraphviewerpart").factory();
   if (!factory)
   {
     // if we couldn't find our Part, we exit since the Shell by
     // itself can't do anything useful
-    KMessageBox::error(this, i18n("Could not find the KGraphViewer part."));
-    kapp->quit();
+    QMessageBox::critical(this, i18n("Unable to start"), i18n("Could not find the KGraphViewer part."));
+    qApp->quit();
     // we return here, cause kapp->quit() only means "exit the
     // next time we enter the event loop...
     return NULL;
@@ -179,13 +174,13 @@ KParts::ReadOnlyPart *KGraphEditor::slotNewGraph()
   if (!view)
   {
     // This should not happen
-    kError() << "Failed to get KPart" << endl;
+    qWarning() << "Failed to get KPart" << endl;
     return NULL;
   }
   view->setReadWrite();
 
     QWidget *w = part->widget();
-    m_widget->addTab(w, QIcon( DesktopIcon("kgraphviewer") ), "");
+    m_widget->addTab(w, QIcon::fromTheme("kgraphviewer"), "");
     m_widget->setCurrentWidget(w);
 //     createGUI(view);
 
@@ -196,9 +191,9 @@ KParts::ReadOnlyPart *KGraphEditor::slotNewGraph()
   return part;
 }
 
-void KGraphEditor::openUrl(const KUrl& url)
+void KGraphEditor::openUrl(const QUrl& url)
 {
-  kDebug() << url;
+  qDebug() << url;
   KParts::ReadOnlyPart *part = slotNewGraph();
   
 //   (KGraphEditorSettings::parsingMode() == "external")
@@ -216,11 +211,10 @@ void KGraphEditor::openUrl(const KUrl& url)
 
 void KGraphEditor::fileOpen()
 {
-  kDebug() ;
   // this slot is called whenever the File->Open menu is selected,
   // the Open shortcut is pressed (usually CTRL+O) or the Open toolbar
   // button is clicked
-  QStringList file_names = KFileDialog::getOpenFileNames(KUrl(QString()), QString("*.dot"), 0, QString());
+  QStringList file_names = QFileDialog::getOpenFileNames(0, i18n("Select files"), QString(), QString("*.dot"));
   
   if (!file_names.empty())
   {
@@ -243,11 +237,11 @@ void KGraphEditor::setupActions()
   actionCollection()->addAction( KStandardAction::New, "file_new", this, SLOT(fileNew()) );
   actionCollection()->addAction( KStandardAction::Open, "file_open", this, SLOT(fileOpen()) );
   m_rfa = (KRecentFilesAction*) actionCollection()->addAction(KStandardAction::OpenRecent, "file_open_recent", this, SLOT(slotURLSelected(KUrl)) );
-  m_rfa->loadEntries(KGlobal::config()->group("kgrapheditor"));
+  m_rfa->loadEntries(KConfigGroup(KSharedConfig::openConfig(), "kgrapheditor"));
   actionCollection()->addAction( KStandardAction::Save, "file_save", this, SLOT(fileSave()) );
   actionCollection()->addAction( KStandardAction::SaveAs, "file_save_as", this, SLOT(fileSaveAs()) );
 
-  actionCollection()->addAction( KStandardAction::Quit, "file_quit", KApplication::kApplication(), SLOT(quit()) );
+  actionCollection()->addAction( KStandardAction::Quit, "file_quit", qApp, SLOT(quit()) );
 
   m_statusbarAction = KStandardAction::showStatusbar(this, SLOT(optionsShowStatusbar()), this);
 
@@ -256,24 +250,23 @@ void KGraphEditor::setupActions()
   actionCollection()->addAction( KStandardAction::ConfigureToolbars, "options_configure_toolbars", this, SLOT(optionsConfigureToolbars()) );
   actionCollection()->addAction( KStandardAction::Preferences, "options_configure", this, SLOT(optionsConfigure()) );
 
-  KAction* edit_new_vertex = actionCollection()->addAction( "edit_new_vertex" );
+  QAction* edit_new_vertex = actionCollection()->addAction( "edit_new_vertex" );
   edit_new_vertex->setText(i18n("Create a New Vertex"));
-  edit_new_vertex->setIcon(QPixmap(KGlobal::dirs()->findResource("data","kgraphviewerpart/pics/kgraphviewer-newnode.png")));
+  edit_new_vertex->setIcon(QPixmap(QStandardPaths::locate(QStandardPaths::DataLocation, "kgraphviewerpart/pics/kgraphviewer-newnode.png")));
   connect( edit_new_vertex, SIGNAL(triggered(bool)), this, SLOT(slotEditNewVertex()) );
 
-  KAction* edit_new_edge = actionCollection()->addAction( "edit_new_edge" );
+  QAction* edit_new_edge = actionCollection()->addAction( "edit_new_edge" );
   edit_new_edge->setText(i18n("Create a New Edge"));
-  edit_new_edge->setIcon(QPixmap(KGlobal::dirs()->findResource("data","kgraphviewerpart/pics/kgraphviewer-newedge.png")));
+  edit_new_edge->setIcon(QPixmap(QStandardPaths::locate(QStandardPaths::DataLocation, "kgraphviewerpart/pics/kgraphviewer-newedge.png")));
   connect( edit_new_edge, SIGNAL(triggered(bool)), this, SLOT(slotEditNewEdge()) );
 }
 
 void KGraphEditor::closeEvent(QCloseEvent *event)
 {
-  kDebug() ;
   KGraphEditorSettings::setPreviouslyOpenedFiles(m_openedFiles);
-  m_rfa->saveEntries(KGlobal::config()->group("kgrapheditor"));
+  m_rfa->saveEntries(KConfigGroup(KSharedConfig::openConfig(), "kgrapheditor"));
 
-  KGraphEditorSettings::self()->writeConfig();
+  KGraphEditorSettings::self()->save();
   KXmlGuiWindow::closeEvent(event);
 }
 
@@ -314,7 +307,8 @@ void KGraphEditor::optionsConfigureKeys()
 
 void KGraphEditor::optionsConfigureToolbars()
 {
-    saveMainWindowSettings(KGlobal::config()->group("kgrapheditor") );
+    KConfigGroup conf(KConfigGroup(KSharedConfig::openConfig(), "kgrapheditor"));
+    saveMainWindowSettings(conf);
 
   // use the standard toolbar editor
   KEditToolBar dlg(factory());
@@ -337,7 +331,7 @@ void KGraphEditor::optionsConfigure()
                                              KGraphEditorSettings::self(),ft );
 
   Ui::KGraphViewerPreferencesParsingWidget*  parsingWidget = dialog->m_parsingWidget;
-  kDebug() << KGraphEditorSettings::parsingMode();
+  qDebug() << KGraphEditorSettings::parsingMode();
   if (KGraphEditorSettings::parsingMode() == "external")
   {
     parsingWidget->external->setChecked(true);
@@ -414,7 +408,7 @@ void KGraphEditor::optionsConfigure()
 
 void KGraphEditor::applyNewToolbarConfig()
 {
-  applyMainWindowSettings(KGlobal::config()->group("kgrapheditor"));
+  applyMainWindowSettings(KConfigGroup(KSharedConfig::openConfig(), "kgrapheditor"));
 }
 
 // void KGraphViewer::reloadOnChangeMode_pressed(int value)
@@ -432,12 +426,12 @@ void KGraphEditor::applyNewToolbarConfig()
 //     KGraphEditorSettings::setReloadOnChangeMode("ask");
 //     break;
 //   default:
-//   kError() << "Invalid reload on change mode value: " << value;
+//   qWarning() << "Invalid reload on change mode value: " << value;
 //     return;
 //   }
 //   kDebug() << "emiting";
 //   emit(settingsChanged());
-//   KGraphEditorSettings::writeConfig();
+//   KGraphEditorSettings::save();
 // }
 // 
 // void KGraphViewer::openInExistingWindowMode_pressed(int value)
@@ -455,13 +449,13 @@ void KGraphEditor::applyNewToolbarConfig()
 //     KGraphEditorSettings::setOpenInExistingWindowMode("ask");
 //     break;
 //   default:
-//   kError() << "Invalid OpenInExistingWindow value: " << value << endl;
+//   qWarning() << "Invalid OpenInExistingWindow value: " << value << endl;
 //     return;
 //   }
 // 
 //   std::cerr << "emiting" << std::endl;
 //   emit(settingsChanged());
-//   KGraphEditorSettings::writeConfig();
+//   KGraphEditorSettings::save();
 // }
 // 
 // void KGraphViewer::reopenPreviouslyOpenedFilesMode_pressed(int value)
@@ -479,17 +473,17 @@ void KGraphEditor::applyNewToolbarConfig()
 //     KGraphEditorSettings::setReopenPreviouslyOpenedFilesMode("ask");
 //     break;
 //   default:
-//   kError() << "Invalid ReopenPreviouslyOpenedFilesMode value: " << value << endl;
+//   qWarning() << "Invalid ReopenPreviouslyOpenedFilesMode value: " << value << endl;
 //     return;
 //   }
 // 
 //   std::cerr << "emiting" << std::endl;
 //   emit(settingsChanged());
-//   KGraphEditorSettings::writeConfig();
+//   KGraphEditorSettings::save();
 // }
 
 
-void KGraphEditor::slotURLSelected(const KUrl& url)
+void KGraphEditor::slotURLSelected(const QUrl& url)
 {
   openUrl(url);
 }
@@ -497,7 +491,7 @@ void KGraphEditor::slotURLSelected(const KUrl& url)
 void KGraphEditor::close(QWidget* tab)
 {
   m_openedFiles.removeAll(m_tabsFilesMap[tab]);
-  m_widget->removePage(tab);
+  m_widget->removeTab(m_widget->indexOf(tab));
   tab->hide();
   KParts::ReadOnlyPart *part = m_tabsPartsMap[tab];
   m_tabsPartsMap.remove(tab);
@@ -530,9 +524,12 @@ void KGraphEditor::fileSaveAs()
   QWidget* currentPage = m_widget->currentWidget();
   if (currentPage != 0)
   {
-    QString fileName = KFileDialog::getSaveFileName(KUrl(),
-                "*.dot", currentPage,
-                i18n("Save current graph to..."));
+    QString fileName = QFileDialog::getSaveFileName(
+                currentPage,
+                i18n("Save current graph to..."),
+                QString(),
+                "*.dot");
+                
     m_tabsFilesMap[currentPage] = fileName;
     emit(saveTo(fileName));
   }
@@ -551,7 +548,6 @@ void KGraphEditor::newTabSelectedSlot(QWidget* tab)
 
 void KGraphEditor::slotSetActiveGraph(KParts::ReadOnlyPart *part)
 {
-  kDebug();
   if (m_currentPart != 0)
   {
     disconnect(this,SIGNAL(prepareAddNewElement(QMap<QString,QString>)),m_currentPart,SLOT(prepareAddNewElement(QMap<QString,QString>)));
@@ -591,7 +587,7 @@ void KGraphEditor::slotSetActiveGraph(KParts::ReadOnlyPart *part)
   QList<QTreeWidgetItem *> items;
   foreach (const QString& nodeId, nodesIds)
   {
-    kDebug()<< "new item " << nodeId;
+    qDebug()<< "new item " << nodeId;
     QTreeWidgetItem* item = new QTreeWidgetItem((QTreeWidget*)0, QStringList(nodeId));
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     QMap<QString,QString> attributes;//TODO = m_currentPart->nodeAtributes(nodeId);
@@ -608,7 +604,7 @@ void KGraphEditor::slotSetActiveGraph(KParts::ReadOnlyPart *part)
     }
     items.append(item);
   }
-  kDebug() << "inserting";
+  qDebug() << "inserting";
   m_treeWidget->insertTopLevelItems(0, items);
 
 
@@ -639,26 +635,26 @@ void KGraphEditor::slotSetActiveGraph(KParts::ReadOnlyPart *part)
 
 void KGraphEditor::slotNewNodeAdded(const QString& id)
 {
-  kDebug() << id;
+  qDebug() << id;
   update();
 }
 
 void KGraphEditor::slotNewEdgeAdded(const QString& ids, const QString& idt)
 {
-  kDebug() << ids << idt;
+  qDebug() << ids << idt;
   update();
 }
 
 void KGraphEditor::slotNewEdgeFinished( const QString& srcId, const QString& tgtId, const QMap<QString, QString>&attribs)
 {
-  kDebug() << srcId << tgtId << attribs;
+  qDebug() << srcId << tgtId << attribs;
   emit saddNewEdge(srcId,tgtId,attribs);
   update();
 }
 
 void KGraphEditor::slotGraphLoaded()
 {
-  kDebug();
+  qDebug();
   disconnect(m_treeWidget, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
            this,SLOT(slotItemChanged(QTreeWidgetItem*,int)));
   disconnect(m_treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)),
@@ -668,7 +664,7 @@ void KGraphEditor::slotGraphLoaded()
   QList<QTreeWidgetItem *> items;
   foreach (const QString& nodeId, nodesIds)
   {
-    kDebug()<< "item " << nodeId;
+    qDebug()<< "item " << nodeId;
     QTreeWidgetItem* item;
     QList<QTreeWidgetItem*> existingItems = m_treeWidget->findItems(nodeId,Qt::MatchRecursive|Qt::MatchExactly);
     if (existingItems.isEmpty())
@@ -703,7 +699,7 @@ void KGraphEditor::slotGraphLoaded()
       }
     }
 }
-  kDebug() << "inserting";
+  qDebug() << "inserting";
   m_treeWidget->insertTopLevelItems(0, items);
   connect(m_treeWidget, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
            this,SLOT(slotItemChanged(QTreeWidgetItem*,int)));
@@ -713,7 +709,7 @@ void KGraphEditor::slotGraphLoaded()
 
 void KGraphEditor::slotItemChanged ( QTreeWidgetItem * item, int column )
 {
-  kDebug() ;
+  qDebug() ;
   /* values column */
   if (column == 0)
   {
@@ -737,7 +733,7 @@ void KGraphEditor::slotItemChanged ( QTreeWidgetItem * item, int column )
 
 void KGraphEditor::slotItemClicked ( QTreeWidgetItem * item, int column )
 {
-  kDebug() << column;
+  qDebug() << column;
   m_currentTreeWidgetItemText = item->text(0);
 
   QString nodeName = item->parent() != 0 ?
@@ -750,10 +746,10 @@ void KGraphEditor::slotEditNewVertex()
 {
   if (m_currentPart == 0)
   {
-    kDebug() << "new vertex: no part selected";
+    qDebug() << "new vertex: no part selected";
     return;
   }
-  kDebug() << "new vertex";
+  qDebug() << "new vertex";
   emit(prepareAddNewElement(m_newElementAttributes));
 }
 
@@ -761,10 +757,10 @@ void KGraphEditor::slotEditNewEdge()
 {
   if (m_currentPart == 0)
   {
-    kDebug() << "new edge: no part selected";
+    qDebug() << "new edge: no part selected";
     return;
   }
-  kDebug() << "new edge";
+  qDebug() << "new edge";
   emit(prepareAddNewEdge(m_newElementAttributes));
 }
 
@@ -782,17 +778,16 @@ void KGraphEditor::slotAddAttribute(const QString& attribName)
 
 void KGraphEditor::slotRemoveAttribute(const QString& nodeName, const QString& attribName)
 {
-  kDebug();
   emit removeAttribute(nodeName,attribName);
   emit update();
 }
 
 void KGraphEditor::slotNewElementItemChanged(QTreeWidgetItem* item ,int column)
 {
-  kDebug();
+  qDebug();
   if (column == 0)
   {
-    kError() << "Item id change not handled";
+    qWarning() << "Item id change not handled";
     return;
   }
   else if (column == 1)
@@ -801,33 +796,31 @@ void KGraphEditor::slotNewElementItemChanged(QTreeWidgetItem* item ,int column)
   }
   else
   {
-    kError() << "Unknown column" << column;
+    qWarning() << "Unknown column" << column;
     return;
   }
 }
 
 void KGraphEditor::slotAddNewElementAttribute(const QString& attrib)
 {
-  kDebug();
   m_newElementAttributes[attrib] = QString();
 }
 
 void KGraphEditor::slotRemoveNewElementAttribute(const QString& attrib)
 {
-  kDebug();
   m_newElementAttributes.remove(attrib);
 }
 
 void KGraphEditor::slotRemoveElement(const QString& id)
 {
-  kDebug() << id;
+  qDebug() << id;
   m_treeWidget->slotRemoveElement(id);
   emit(removeElement(id));
 }
 
 void KGraphEditor::slotSelectionIs(const QList<QString>& elements , const QPoint& p)
 {
-  kDebug();
+  qDebug();
   Q_UNUSED(p);
   QList<QTreeWidgetItem*> items = m_treeWidget->selectedItems();
   foreach (QTreeWidgetItem* item, items)
@@ -846,37 +839,35 @@ void KGraphEditor::slotSelectionIs(const QList<QString>& elements , const QPoint
 
 void KGraphEditor::slotParsingModeExternalToggled(bool value)
 {
-  kDebug();
   if (value)
   {
     KGraphEditorSettings::setParsingMode("external");
   }
   //   kDebug() << "emiting";
   //   emit(settingsChanged());
-  KGraphEditorSettings::self()->writeConfig();
+  KGraphEditorSettings::self()->save();
 }
 
 void KGraphEditor::slotParsingModeInternalToggled(bool value)
 {
-  kDebug();
   if (value)
   {
     KGraphEditorSettings::setParsingMode("internal");
   }
   //   kDebug() << "emiting";
   //   emit(settingsChanged());
-  KGraphEditorSettings::self()->writeConfig();
+  KGraphEditorSettings::self()->save();
 }
 
 void KGraphEditor::slotHoverEnter(const QString& id)
 {
-  kDebug() << id;
+  qDebug() << id;
   statusBar()->showMessage(id);
 }
 
 void KGraphEditor::slotHoverLeave(const QString& id)
 {
-  kDebug() << id;
+  qDebug() << id;
   statusBar()->showMessage("");
 }
 
